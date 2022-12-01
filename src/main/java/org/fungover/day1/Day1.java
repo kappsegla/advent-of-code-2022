@@ -1,8 +1,11 @@
 package org.fungover.day1;
 
+import org.fungover.util.Strings;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.fungover.util.FileReader.resourceStringToPath;
@@ -27,18 +30,21 @@ public class Day1 {
 
                 10000""";
 
-        List<Integer> caloriesPerElf = new ArrayList<>();
-        int total = 0;
-        for (String line : s.lines().toList()) {
-            if (line.isEmpty()) {
-                caloriesPerElf.add(total);
-                total = 0;
-                continue;
-            }
-            total += Integer.parseInt(line);
-        }
-        if( total > 0)
-            caloriesPerElf.add(total);
+//        List<Integer> caloriesPerElf = new ArrayList<>();
+//        int total = 0;
+//        for (String line : s.lines().toList()) {
+//            if (line.isEmpty()) {
+//                caloriesPerElf.add(total);
+//                total = 0;
+//                continue;
+//            }
+//            total += Integer.parseInt(line);
+//        }
+//        if( total > 0)
+//            caloriesPerElf.add(total);
+
+        List<Integer> caloriesPerElf = Strings.stringToListOfListOfStrings(s).stream()
+                .map(o-> o.stream().mapToInt(Integer::parseInt).sum()).toList();
 
         int index = IntStream.range(0, caloriesPerElf.size()).boxed().max(Comparator.comparing(caloriesPerElf::get)).orElse(-1);
 
