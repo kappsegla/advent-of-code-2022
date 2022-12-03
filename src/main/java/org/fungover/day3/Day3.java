@@ -19,6 +19,8 @@ public class Day3 {
 //                ttgJtRGJQctTZtZT
 //                CrZsJsPPZsGzwwsLwLmpwMDw""";
 
+        System.out.println((int)'a');
+        System.out.println((int)'A');
         step1(s);
         step2(s);
     }
@@ -41,7 +43,7 @@ public class Day3 {
                 if (Character.isUpperCase(k)) return k - 'A' + 27;
             }
         }
-        throw new RuntimeException();
+        throw new RuntimeException("No common character found");
     }
 
     private static void step2(String s) {
@@ -49,27 +51,19 @@ public class Day3 {
 
         var grouped = StreamUtils.createRows(result, 3);
 
-        List<Integer> total = new ArrayList<>();
-        for (var t : grouped) {
-            for (int c : t.get(0).chars().toArray()) {
-                char k = (char) c;
-                if (t.get(1).contains(String.valueOf(k)) && t.get(2).contains(String.valueOf(k))) {
-                    if (Character.isLowerCase(k)) {
-                        //  System.out.println(k - 'a' + 1);
-                        total.add(k - 'a' + 1);
-                    }
-                    if (Character.isUpperCase(k)) {
-                        //  System.out.println(k - 'A' + 27);
-                        total.add(k - 'A' + 27);
-                    }
-                    break;
-                }
-            }
-        }
-        System.out.println(total.stream().mapToInt(Integer::intValue).sum());
+        System.out.println(grouped.stream().mapToInt(Day3::commonCharInStrings).sum());
     }
 
-
+    private static int commonCharInStrings(List<String> strings) {
+        for (int c : strings.get(0).chars().toArray()) {
+            char k = (char) c;
+            if (strings.get(1).contains(String.valueOf(k)) && strings.get(2).contains(String.valueOf(k))) {
+                if (Character.isLowerCase(k)) return k - 'a' + 1;
+                if (Character.isUpperCase(k)) return k - 'A' + 27;
+            }
+        }
+        throw new RuntimeException("No common character found");
+    }
 }
 
 record Tuple(String c1, String c2) {
