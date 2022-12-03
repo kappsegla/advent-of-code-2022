@@ -29,24 +29,19 @@ public class Day3 {
             return new Tuple(l.substring(0, l.length() / 2), l.substring(l.length() / 2));
         }).toList();
 
-        List<Integer> total = new ArrayList<>();
-        for (var t : result) {
-            for (int c : t.c1().chars().toArray()) {
-                char k = (char) c;
-                if (t.c2().contains(String.valueOf(k))) {
-                    if (Character.isLowerCase(k)) {
-                        System.out.println(k - 'a' + 1);
-                        total.add(k - 'a' + 1);
-                    }
-                    if (Character.isUpperCase(k)) {
-                        System.out.println(k - 'A' + 27);
-                        total.add(k - 'A' + 27);
-                    }
-                    break;
-                }
+        var total = result.stream().mapToInt(Day3::commonCharToInt).sum();
+        System.out.println(total);
+    }
+
+    private static int commonCharToInt(Tuple tuple) {
+        for (int c : tuple.c1().chars().toArray()) {
+            char k = (char) c;
+            if (tuple.c2().contains(String.valueOf(k))) {
+                if (Character.isLowerCase(k)) return k - 'a' + 1;
+                if (Character.isUpperCase(k)) return k - 'A' + 27;
             }
         }
-        System.out.println(total.stream().mapToInt(Integer::intValue).sum());
+        throw new RuntimeException();
     }
 
     private static void step2(String s) {
@@ -60,11 +55,11 @@ public class Day3 {
                 char k = (char) c;
                 if (t.get(1).contains(String.valueOf(k)) && t.get(2).contains(String.valueOf(k))) {
                     if (Character.isLowerCase(k)) {
-                        System.out.println(k - 'a' + 1);
+                        //  System.out.println(k - 'a' + 1);
                         total.add(k - 'a' + 1);
                     }
                     if (Character.isUpperCase(k)) {
-                        System.out.println(k - 'A' + 27);
+                        //  System.out.println(k - 'A' + 27);
                         total.add(k - 'A' + 27);
                     }
                     break;
