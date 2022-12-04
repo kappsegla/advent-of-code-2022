@@ -1,9 +1,10 @@
 package org.fungover.day4;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 import static org.fungover.util.FileReader.resourceStringToPath;
 import static org.fungover.util.FileReader.stringFromFile;
 
@@ -19,37 +20,73 @@ public class Day4 {
 //                2-6,4-8
 //                """;
         var sectors = s.lines()
-                .map(l -> Arrays.stream(l.split("[-,]")).mapToInt(Integer::parseInt).toArray())
+                .map(l -> Arrays.stream(l.split("[-,]"))
+                        .mapToInt(Integer::parseInt).toArray())
+                .map(a -> List.of(new Range(a[0], a[1]), new Range(a[2], a[3])))
                 .toList();
-        //Step1
+
+        //Step1  511
         int count = 0;
         for (var v : sectors) {
-            if (overlapp(v[0], v[1], v[2], v[3])) {
-                var overlapp = overlappedRange(v);
-                if( overlapp[1]- overlapp[0] == v[1]-v[0] || overlapp[1]- overlapp[0] == v[3]-v[2])
+            var r1 = v.get(0);
+            var r2 = v.get(1);
+            if (r1.overlapping(r2)) {
+                var overlapp = r1.overlappedRange(r2);
+                if (overlapp.length() == r1.length() || overlapp.length() == r2.length())
                     count++;
             }
         }
         System.out.println(count);
-        //Step2
-        count = 0;
-        for (var v : sectors) {
-            if (overlapp(v[0], v[1], v[2], v[3])) {
-                count++;
-            }
-        }
-        System.out.println(count);
-    }
+        //Step2 821
+        //Just do the overlapp check
+        var result = sectors.stream().map(v-> v.get(0).overlapping(v.get(1))).filter(i->i).count();
+        System.out.println(result);
 
-    private static int[] overlappedRange(int[] ranges) {
-        int e = Math.max(ranges[0],ranges[2]);
-        int f = Math.min(ranges[1],ranges[3]);
-        //if(  e <= f ) //Overlapping
-        return new int[]{e,f};
-    }
-
-    private static boolean overlapp(int a, int c, int b, int d) {
-        return a <= d && c >= b;
     }
 }
 
+/**
+ * Representing a range
+ * @param start, start of range, inclusive
+ * @param end, end of range, inclusive
+ */
+record Range(int start, int end) {
+    Range(int start, int end) {
+        if( start > end)
+            throw new IllegalArgumentException(String.format("End %d must be >= than start %d",end,start));
+        this.start = start;
+        this.end = end;
+    }
+
+    /**
+     * Calculates the length of the range end - start. For a range with start 1 and end 3 the length will be 3
+     * since the Range is inclusive
+     * @return The length of the range
+     */
+    public int length() {
+        return end - start + 1;
+    }
+
+    /**
+     * Checks if this range overlapps with the other range
+     * @param other
+     * @return True if overlapping
+     */
+    public boolean overlapping(Range other) {
+        return this.start <= other.end && this.end >= other.start;
+    }
+
+    /**
+     * If the ranges overlap this method will return a new range
+     * consisting of the overlapping range
+     * @param other
+     * @return A new Range representing the overlapped range
+     */
+    public Range overlappedRange(Range other) {
+        int oStart = Math.max(this.start, other.start);
+        int oEnd = Math.min(this.end, other.end);
+        if (oStart <= oEnd) //Overlapping
+            return new Range(oStart, oEnd);
+        throw new RuntimeException("No overlap");
+    }
+}
