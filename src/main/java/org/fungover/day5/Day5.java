@@ -25,11 +25,17 @@ public class Day5 {
 //                move 2 from 2 to 1
 //                move 1 from 1 to 2
 //                """;
-        var parts = s.split("\\r\\n\\r\\n");
+        var parts = s.split("\\r?\\n\\r?\\n");
 
+        //Step1 ZSQVCCJLL
         fillStacks(parts[0]);
-
         parts[1].lines().forEach(Day5::crateMover9000);
+        stacks.forEach(stack-> System.out.print(stack.peek()));
+        stacks.clear();
+        System.out.println();
+        //Step2  QZFJRWHGS
+        fillStacks(parts[0]);
+        parts[1].lines().forEach(Day5::crateMover9001);
         stacks.forEach(stack-> System.out.print(stack.peek()));
     }
 
@@ -59,5 +65,18 @@ public class Day5 {
         for (int j = 0; j < count; j++) {
             stacks.get(to).push(stacks.get(from).pop());
         }
+    }
+
+    public static void crateMover9001(String instruction){
+        var i = instruction.split(" ");
+        var count = Integer.parseInt(i[1]);
+        var from = Integer.parseInt(i[3]) - 1;
+        var to = Integer.parseInt(i[5]) - 1;
+
+        Deque<String> tempStorage = new ArrayDeque<>();
+        for (int j = 0; j < count; j++) {
+            tempStorage.push(stacks.get(from).pop());
+        }
+        tempStorage.forEach(stacks.get(to)::push);
     }
 }
