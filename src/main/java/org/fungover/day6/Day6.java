@@ -17,14 +17,11 @@ public class Day6 {
             var c3 = input.charAt(i + 2);
             var c4 = input.charAt(i + 3);
 
-            if (c1 == c2 || c1 == c3 || c1 == c4 ||
-                    c2 == c3 || c2 == c4 || c3 == c4) {
-                //Not a valid packet marker
-            }
-            else{
-                //Valid packet marker
-                return i + 4;
-            }
+            if (c1 != c2 && c1 != c3 && c1 != c4 &&
+                    c2 != c3 && c2 != c4 && c3 != c4) {
+                        //Valid packet marker
+                        return i + 4;
+                    }
         }
         throw new RuntimeException("Invalid input");
     }
