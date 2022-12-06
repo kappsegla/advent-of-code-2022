@@ -11,6 +11,21 @@ public class Day6 {
     }
 
     public static int packetMarker(String input) {
-        return 7;
+        for (int i = 0; i < input.length() - 3; i++) {
+            var c1 = input.charAt(i);
+            var c2 = input.charAt(i + 1);
+            var c3 = input.charAt(i + 2);
+            var c4 = input.charAt(i + 3);
+
+            if (c1 == c2 || c1 == c3 || c1 == c4 ||
+                    c2 == c3 || c2 == c4 || c3 == c4) {
+                //Not a valid packet marker
+            }
+            else{
+                //Valid packet marker
+                return i + 4;
+            }
+        }
+        throw new RuntimeException("Invalid input");
     }
 }

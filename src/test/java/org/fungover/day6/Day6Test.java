@@ -9,14 +9,20 @@ class Day6Test {
     @Test
     void exampleInputShouldGive7() {
         var input = "mjqjpqmgbljsphdztnvjfqwrcgsmlb";
-        var expected = 7;
 
         var result = Day6.packetMarker(input);
 
-        assertThat(result).isEqualTo(expected);
+        assertThat(result).isEqualTo(7);
     }
-    
-    
+
+    @Test
+    void examplInputShouldGive5() {
+        var input = "bvwbjplbgvbhsrlpgdmjqwftvncz";
+
+        var result = Day6.packetMarker(input);
+
+        assertThat(result).isEqualTo(5);
+    }
     
     
 }
