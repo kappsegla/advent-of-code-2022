@@ -36,5 +36,35 @@ class Day6Test {
         assertThat(result).isEqualTo(expected);
     }
 
+    @Test
+    void numberOfProcessedCharactersForMessageMarkerShouldReturn19() {
+        var input = "mjqjpqmgbljsphdztnvjfqwrcgsmlb";
+
+        var result = Day6.messageMarker(input);
+
+        assertThat(result).isEqualTo(19);
+    }
+
+    @Test
+    void numberOfProcessedCharactersForMessageMarkerShouldReturn23() {
+        var input = "bvwbjplbgvbhsrlpgdmjqwftvncz";
+
+        var result = Day6.messageMarker(input);
+
+        assertThat(result).isEqualTo(23);
+    }
+
+    @Test
+    void isUniqueGivenAbcShouldReturnTrue() {
+        assertThat(Day6.isUnique("abc")).isTrue();
+    }
+
+    @Test
+    void isUnigueGivenaabshouldReturnFalse() {
+        assertThat(Day6.isUnique("aab")).isFalse();
+    }
+    
+    
+
 
 }
