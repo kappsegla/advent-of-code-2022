@@ -8,22 +8,6 @@ import static org.fungover.util.FileReader.stringFromFile;
 public class Day7 {
     public static void main(String[] args) {
         String s = stringFromFile(resourceStringToPath("/day7/day7.txt"));
-//        String s = """
-//                $ cd /
-//                $ ls
-//                dir a
-//                100 b.txt
-//                100 c.dat
-//                $ cd a
-//                $ ls
-//                dir b
-//                100 b.txt
-//                100 c.dat
-//                $ cd b
-//                $ ls
-//                100 d.txt
-//                100 e.txt
-//                """;
 
 //        String s = """
 //                $ cd /
@@ -113,6 +97,19 @@ public class Day7 {
         System.out.println("Max 100000 dirs: " + allFolders.stream().mapToLong(Node::calculateSize)
                 .filter(n -> n <= 100000L)
                 .sum()); //95437 for testdata
+
+        long diskSize = 70000000;
+
+        long freeSpace = 70000000 - root.calculateSize();
+        System.out.println(freeSpace);
+        long neededSpace = 30000000 - freeSpace;
+        System.out.println(neededSpace);
+
+        allFolders.stream()
+                .sorted(Comparator.comparingLong(Node::calculateSize))
+                .filter(n -> n.calculateSize() >= neededSpace)
+                .forEach(o-> System.out.println(o +  " : " + o.calculateSize()));
+
     }
 
     private static void printTree(Node node, int i) {
