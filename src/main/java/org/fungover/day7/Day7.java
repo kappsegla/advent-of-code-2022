@@ -8,6 +8,8 @@ import static org.fungover.util.FileReader.stringFromFile;
 public class Day7 {
     public static void main(String[] args) {
         String s = stringFromFile(resourceStringToPath("/day7/day7.txt"));
+        //Step1 answer = 1243729
+        //Step2 answer = 4443914
 
 //        String s = """
 //                $ cd /
@@ -34,92 +36,77 @@ public class Day7 {
 //                5626152 d.ext
 //                7214296 k
 //                """;
-//        //Map<String, Node> nodes = new HashMap<>();
-        System.out.println(s.lines().filter(y -> y.startsWith("dir")).distinct().count());
-
+        //Step1 answer = 95437
+        //Step2 answer = 24933642 (dir d)
 
         Node root = new Node("/", 0);
         Node $ = root;
-        Node dir = null;
 
-        for (var t : s.lines().toList()) {
-            var l = t;
-            if (t.startsWith("$"))
-                l = t.substring(2);
-            if (l.startsWith("cd /")) {
+        for (var line : s.lines().toList()) {
+            var terminalOutput = line;
+            if (line.startsWith("$"))
+                terminalOutput = line.substring(2);
+
+            if (terminalOutput.matches("cd /")) {
                 $ = root;
-                continue;
-            }
-            if (l.startsWith("cd ..")) {
-                if ($.getParent() != null)
-                    $ = $.getParent();
-                continue;
-            }
-            if (l.matches("cd\\s[^.]+")) {
-                //Move to folder deeper in our tree
-                var nodeName = l.split("\\s")[1];
+            } else if (terminalOutput.matches("cd ..")) {
+                //Move out one level
+                $ = $.getParent();
+            } else if (terminalOutput.matches("cd\\s[^.]+")) {
+                //Move in one level
+                var nodeName = terminalOutput.split("\\s")[1];
                 var nextNode = $.nodes().stream().filter(n -> n.name().equals(nodeName)).findFirst();
                 if (nextNode.isPresent())
                     $ = nextNode.get();
                 else {
-                    $ = $.addNode(nodeName, 0L);
+                    $ = $.addFile(nodeName, 0L);
                 }
-                continue;
+            } else if (terminalOutput.matches("dir .*")) {
+                //Directory
+                var folderName = terminalOutput.split("\\s")[1];
+                $.addDir(folderName);
             }
-            if (l.startsWith("dir")) {
-                //Found a folder name
-                var folderName = l.split("\\s")[1];
-                $.addNode(folderName, 0L);
-                continue;
-            }
-            if (l.startsWith("$ ls")) {
-                //Ignore
-                continue;
-            }
-            if (l.matches("\\d+\\s[\\D]+")) {
-                //Found a file, add to current folder
-                var parts = l.split("\\s");
-                $.addNode(parts[1], Long.parseLong(parts[0]));
+            else if (terminalOutput.matches("\\d+\\s[\\D]+")) {
+                //File
+                var parts = terminalOutput.split("\\s");
+                $.addFile(parts[1], Long.parseLong(parts[0]));
             }
         }
+        //printTree(root, 1);
+        List<Node> allFolders = step1(root);
+        step2(root, allFolders);
+    }
 
-
-
-        printTree(root, 1);
-
-        //Total size
-        System.out.println("Total size: " + root.calculateSize()); //48381165 for testdata
-
+    private static List<Node> step1(Node root) {
         List<Node> allFolders = new ArrayList<>();
 
         getAllFolders(root, allFolders);
 
-        System.out.println("Max 100000 dirs: " + allFolders.stream().mapToLong(Node::calculateSize)
+        System.out.println("Total size for dirs <= 100000: " + allFolders.stream().mapToLong(Node::calculateSize)
                 .filter(n -> n <= 100000L)
-                .sum()); //95437 for testdata
+                .sum());
+        return allFolders;
+    }
 
-        long diskSize = 70000000;
+    private static void step2(Node root, List<Node> allFolders) {
+        final long DISK_SIZE = 70000000;
+        final long FREE_DISK_NEEDED = 30000000;
 
-        long freeSpace = 70000000 - root.calculateSize();
-        System.out.println(freeSpace);
-        long neededSpace = 30000000 - freeSpace;
-        System.out.println(neededSpace);
+        long freeSpace = DISK_SIZE - root.calculateSize();
+        long neededSpace = FREE_DISK_NEEDED - freeSpace;
 
         allFolders.stream()
                 .sorted(Comparator.comparingLong(Node::calculateSize))
                 .filter(n -> n.calculateSize() >= neededSpace)
-                .forEach(o-> System.out.println(o +  " : " + o.calculateSize()));
-
+                .findFirst()
+                .ifPresent(n -> System.out.println("Remove dir " + n + ", size: " + n.calculateSize()));
     }
 
     private static void printTree(Node node, int i) {
-        //Print intendention
-        System.out.printf("%"+ i +"s", "  ");
-        //Print ourself
+        System.out.printf("%" + i + "s", "  ");
         System.out.println(node.toString());
-        //Print our siblings
-        for( Node n : node.nodes()) {
-            printTree(n,i+1);
+        for (Node n : node.nodes()) {
+            printTree(n, i + 1);
         }
     }
 
@@ -135,7 +122,7 @@ public class Day7 {
 
 final class Node {
     private final String name;
-    private final long size;
+    private final long size; //Zero for directories
     private final Set<Node> nodes;
     private Node parent;
 
@@ -178,7 +165,14 @@ final class Node {
         return name + " " + size;
     }
 
-    public Node addNode(String name, long size) {
+    public Node addDir(String name) {
+        var n = new Node(name, 0L);
+        n.parent = this;
+        this.nodes.add(n);
+        return n;
+    }
+
+    public Node addFile(String name, long size) {
         var n = new Node(name, size);
         n.parent = this;
         this.nodes.add(n);
@@ -186,13 +180,14 @@ final class Node {
     }
 
     public long calculateSize() {
-        //Call all our nodes and ask them to update and return there size if we are directory
-        if (size == 0)
+        if (size == 0)  //Directory
             return nodes.stream().mapToLong(Node::calculateSize).sum();
         return size;
     }
 
     public Node getParent() {
+        if (parent == null)
+            return this;
         return parent;
     }
 
