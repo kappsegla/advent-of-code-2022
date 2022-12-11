@@ -1,6 +1,5 @@
 package org.fungover.day11;
 
-import org.fungover.util.StreamUtils;
 import org.fungover.util.Strings;
 
 import java.util.ArrayList;
@@ -20,10 +19,19 @@ public class Day11 {
         var monkeys = Strings.stringToListOfListOfStrings(s);
         var monkeyList = monkeys.stream().map(Monkey::parse).toList();
 
-        for (int i = 0; i < 20; i++) {
-            monkeyList.stream().forEach(m -> m.turn(monkeyList));
+//        for (int i = 0; i < 20; i++) {
+//            monkeyList.stream().forEach(m -> m.turn1(monkeyList));
+//        }
+
+        var mod = 1;
+        for( var monkey : monkeyList) {
+            mod *= monkey.divisibleBy;
         }
 
+        for (int j = 0; j < 10000; j++) {
+            int k = mod;
+            monkeyList.stream().forEach(m -> m.turn2(monkeyList,k));
+        }
         monkeyList.stream().map(m -> m.inspections).forEach(System.out::println);
 
 
@@ -47,7 +55,7 @@ class Monkey {
     int inspections;
 
 
-    public void turn(List<Monkey> monkeys) {
+    public void turn1(List<Monkey> monkeys) {
         //Inspect
         for (Item item : worryItems) {
             if (operation == SELF)
@@ -62,6 +70,33 @@ class Monkey {
         //Divide by 3
         for (Item item : worryItems) {
             item.worryLevel /= 3;
+        }
+
+        //Test
+        for (Item item : worryItems) {
+            if (item.worryLevel % divisibleBy == 0) {
+                monkeys.get(whenTrue).worryItems.add(item);
+            } else {
+                monkeys.get(whenFalse).worryItems.add(item);
+            }
+        }
+        worryItems.clear();
+    }
+
+    public void turn2(List<Monkey> monkeys, int mod) {
+        //Inspect
+        for (Item item : worryItems) {
+            if (operation == SELF)
+                item.worryLevel = item.worryLevel * item.worryLevel;
+            if (operation == PLUS)
+                item.worryLevel = item.worryLevel + value;
+            if (operation == MULTIPLICATION)
+                item.worryLevel = item.worryLevel * value;
+            inspections++;
+        }
+        int totalValue;
+        for (Item item : worryItems) {
+            item.worryLevel =  item.worryLevel % mod;
         }
 
         //Test
@@ -100,7 +135,7 @@ class Monkey {
 }
 
 class Item {
-    int worryLevel;
+    long worryLevel;
 
     public Item(int worryLevel) {
         this.worryLevel = worryLevel;
