@@ -43,7 +43,7 @@ public class Day14 {
         boolean overflow = false;
         int sandX = 500;
         int sandY = 0;
-        while (sandY + 1 <= grid.area().length - 1 && sandX - 1 >= 0  && sandX + 1 < grid.area()[0].length - 1) {
+        while ( sandX >= 0 && sandX < maxWidth && sandY >= 0 && sandY<maxHeight) {
             //Try to fall down
             if (grid.down(sandX, sandY))
                 sandY++;
@@ -56,18 +56,25 @@ public class Day14 {
             else if (grid.downRight(sandX, sandY)) {
                 sandY++;
                 sandX++;
-
             } else {
                 //Come to rest
                 grid.area()[sandY][sandX] = 2;
                 sandY = 0;
                 sandX = 500;
                 sandUnits++;
+//                for (int j = 0; j < grid.area().length; j++) {
+//                    for (int i = 493; i < grid.area()[0].length; i++) {
+//                        System.out.print(grid.area()[j][i]);
+//                    }
+//                    System.out.println();
+//                }
+//                System.out.println();
             }
+
         }
 
         for (int j = 0; j < grid.area().length; j++) {
-            for (int i = 0; i < grid.area()[0].length; i++) {
+            for (int i = 493; i < grid.area()[0].length; i++) {
                 System.out.print(grid.area()[j][i]);
             }
             System.out.println();
@@ -95,20 +102,14 @@ record Grid(int[][] area) {
     }
 
     public boolean down(int x, int y) {
-        if (y >= area.length - 1)
-            return false;
         return area[y + 1][x] == 0;
     }
 
     public boolean downLeft(int x, int y) {
-        if (y >= area.length - 1 || x <= 0)
-            return false;
         return area[y + 1][x - 1] == 0;
     }
 
     public boolean downRight(int x, int y) {
-        if (y >= area.length - 1 || x >= area[0].length - 1)
-            return false;
         return area[y + 1][x + 1] == 0;
     }
 }
