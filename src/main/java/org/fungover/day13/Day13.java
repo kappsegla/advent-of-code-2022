@@ -1,81 +1,170 @@
 package org.fungover.day13;
 
-import com.google.gson.*;
-
-import java.lang.reflect.Array;
 import java.util.*;
 
-import static org.fungover.util.FileReader.resourceStringToPath;
-import static org.fungover.util.FileReader.stringFromFile;
+import static java.util.function.Predicate.not;
 import static org.fungover.util.Strings.stringToListOfListOfStrings;
 
 public class Day13 {
     public static void main(String[] args) {
-        String s = stringFromFile(resourceStringToPath("/day13/day13.txt"));
-//        String s = """
-//                [1,1,3,1,1]
-//                [1,1,5,1,1]
-//
-//                [[1],[2,3,4]]
-//                [[1],4]
-//
-//                [9]
-//                [[8,7,6]]
-//
-//                [[4,4],4,4]
-//                [[4,4],4,4,4]
-//
-//                [7,7,7,7]
-//                [7,7,7]
-//
-//                []
-//                [3]
-//
-//                [[[]]]
-//                [[]]
-//
-//                [1,[2,[3,[4,[5,6,7]]]],8,9]
-//                [1,[2,[3,[4,[5,6,0]]]],8,9]
-//                """; //13 //140
+//        String s = stringFromFile(resourceStringToPath("/day13/day13.txt"));
+        String s = """
+                [1,1,3,1,1]
+                [1,1,5,1,1]
+
+                [[1],[2,3,4]]
+                [[1],4]
+
+                [9]
+                [[8,7,6]]
+
+                [[4,4],4,4]
+                [[4,4],4,4,4]
+
+                [7,7,7,7]
+                [7,7,7]
+
+                []
+                [3]
+
+                [[[]]]
+                [[]]
+
+                [1,[2,[3,[4,[5,6,7]]]],8,9]
+                [1,[2,[3,[4,[5,6,0]]]],8,9]
+                """; //13 //140
+
         //Step1
-        var lines = stringToListOfListOfStrings(s);
-        Set<Integer> rightOrderPairs = new HashSet<>();
-        for (int i = 0; i < lines.size(); i++) {
-            List<String> pair = lines.get(i);
-            if (compare(JsonParser.parseString(pair.get(0)), JsonParser.parseString(pair.get(1))) < 0)
-                rightOrderPairs.add(i + 1);
+        var elements = stringToListOfListOfStrings(s).stream()
+                .map(i-> List.of( Element.of(i.get(0)),Element.of(i.get(1))))
+                .toList();
+
+        List<Integer> index = new ArrayList<>();
+        for (int i = 0; i < elements.size() ; i++) {
+            var element = elements.get(i);
+            if (element.get(0).compareTo(element.get(1)) < 0)
+                index.add(i+1);
         }
-        System.out.println(rightOrderPairs.stream().mapToInt(i -> i).sum());
+
+        System.out.println(index.stream().mapToInt(Integer::intValue).sum());
         //Step2
         s += "\n[[2]]\n[[6]]";
-        lines = stringToListOfListOfStrings(s);
-        var sorted = lines.stream().flatMap(Collection::stream).map(JsonParser::parseString).sorted(Day13::compare).toList();
-        JsonElement divider1 = JsonParser.parseString("[[2]]");
-        JsonElement divider2 = JsonParser.parseString("[[6]]");
-        System.out.println( (sorted.indexOf(divider1)+1) * (sorted.indexOf(divider2)+1));
+        elements = stringToListOfListOfStrings(s).stream()
+                .map(i-> List.of( Element.of(i.get(0)),Element.of(i.get(1))))
+                .toList();
+        var divider1 = Element.of("[[2]]");
+        var divider2 = Element.of("[[6]]");
 
+        var sorted = elements.stream()
+                .flatMap(Collection::stream)
+                .sorted(Element::compareTo)
+                .toList();
+        System.out.println( (sorted.indexOf(divider1)+1) * (sorted.indexOf(divider2)+1));
+    }
+}
+
+
+abstract sealed class Element implements Comparable<Element> permits IntElement, ListElement {
+
+    public static Element of(String input) {
+        return of(Arrays.stream(input.split("((?<=[\\[\\],])|(?=[\\[\\],]))"))
+                .filter(not(String::isBlank))
+                .filter(i -> !i.equals(","))
+                .iterator());
     }
 
-    public static int compare(JsonElement first, JsonElement second) {
-        if (first instanceof JsonPrimitive firstInteger && second instanceof JsonArray) {
-            JsonArray array = new JsonArray();
-            array.add(firstInteger);
-            return compare(array, second);
-        } else if (first instanceof JsonArray && second instanceof JsonPrimitive secondInteger) {
-            JsonArray array = new JsonArray();
-            array.add(secondInteger);
-            return compare(first, array);
-        } else if (first instanceof JsonPrimitive firstInteger && second instanceof JsonPrimitive secondInteger) {
-            return Integer.compare(firstInteger.getAsInt(), secondInteger.getAsInt());
-        } else if (first instanceof JsonArray firstArray && second instanceof JsonArray secondArray) {
-            for (int i = 0; i < Math.min(firstArray.size(), secondArray.size()); i++) {
-                int result = compare(firstArray.get(i), secondArray.get(i));
-                if (result != 0) {
-                    return result;
+    private static Element of(Iterator<String> input) {
+        var packets = new ArrayList<Element>();
+
+        while (input.hasNext()) {
+            var value = input.next();
+            switch (value) {
+                case "]" -> {
+                    return new ListElement(packets);
                 }
+                case "[" -> packets.add(of(input));
+                default -> packets.add(new IntElement(Integer.parseInt(value)));
             }
-            return compare(new JsonPrimitive(firstArray.size()), new JsonPrimitive(secondArray.size()));
         }
-        return 0;
+        return new ListElement(packets);
+    }
+}
+
+final class IntElement extends Element {
+
+    public Integer value;
+
+    public IntElement(Integer value) {
+        this.value = value;
+    }
+
+    @Override
+    public int compareTo(Element o) {
+        return switch (o) {
+            case IntElement other -> value.compareTo(other.value);
+            case ListElement list -> asList().compareTo(list);
+        };
+    }
+
+    public ListElement asList() {
+        return new ListElement(List.of(this));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        IntElement that = (IntElement) o;
+
+        return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return value != null ? value.hashCode() : 0;
+    }
+}
+
+final class ListElement extends Element {
+
+    List<Element> subElements;
+
+    public ListElement(List<Element> subElements) {
+        this.subElements = subElements;
+    }
+
+    @Override
+    public int compareTo(Element o) {
+        return switch (o) {
+            case IntElement other -> compareTo(other.asList());
+            case ListElement other -> compareLists(other);
+        };
+    }
+
+    private int compareLists(ListElement other) {
+        var first = subElements.iterator();
+        var second = other.subElements.iterator();
+        while (first.hasNext() && second.hasNext()) {
+            int compare = ((Element) first.next()).compareTo(second.next());
+            if (compare != 0)
+                return compare;
+        }
+        return Integer.compare(subElements.size(), other.subElements.size());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ListElement that = (ListElement) o;
+
+        return Objects.equals(subElements, that.subElements);
+    }
+
+    @Override
+    public int hashCode() {
+        return subElements != null ? subElements.hashCode() : 0;
     }
 }
