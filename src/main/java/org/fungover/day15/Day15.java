@@ -71,7 +71,7 @@ public class Day15 {
             for (var bs : b) {
                 if ((bs - as) % 2 == 1 || as >= bs)  //Will not intersect if odd
                     continue;
-                var p = new Point((bs - as) / 2, (as + bs) / 2);  //Intersection
+                var p = new Point((bs - as) / 2, (as + bs) / 2);  //Intersection points
                 //Check if intersection point is outside all sensor radius
                 if (p.p1() > 0 && p.p1() <= BOUND && p.p2() > 0 && p.p2() <= BOUND)
                     if (data.stream().allMatch(t -> distance(p, t) > t.manhattanDistance()))
