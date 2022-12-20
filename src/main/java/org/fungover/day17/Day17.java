@@ -50,8 +50,8 @@ public class Day17 {
 
     public static void main(String[] args) throws IOException {
 
-        String s = stringFromFile(resourceStringToPath("/day17/day17.txt"));
-//        String s = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
+//        String s = stringFromFile(resourceStringToPath("/day17/day17.txt"));
+        String s = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
 
         long rockCount = 0;
         int jetId = -1;
@@ -79,9 +79,9 @@ public class Day17 {
 //        System.out.println(findMaxY() + 1);
 
         //Step 2
-        Map<Earlier, Value> seen = new HashMap<>();
+        Map<State, Value> seen = new HashMap<>();
         Value firstRepeat = null;
-        var times = 0L;
+        var calculated = 0L;
 
         while (rockCount < 1000000000000L) {
             for (int c : s.chars().toArray()) {
@@ -91,34 +91,31 @@ public class Day17 {
                 else if (c == '>')
                     moveRock(1, 0);
                 if (!moveDown()) {
-                    var topView = topView();
-                    var latest = new Earlier(topView, currentRockId, jetId);
-                    if (seen.containsKey(latest)) {
-                        if( firstRepeat == null) {
-                            firstRepeat = seen.get(latest);
-                            System.out.println(seen.get(latest));
-                            times = (1000000000000L-rockCount) / rockCount;
-                            rockCount+=rockCount*times;
-                        }
-                    }
-                    seen.put(latest, new Value(findMaxY(), rockCount));
-
                     //Rock is stuck, add new rock
                     currentRockId = (currentRockId + 1) % rocks.length;
                     px = 2;
                     py = findMaxY() + 3 + 4 - freeSpace[currentRockId];
-
-                    //System.out.println("New Rock");
                     rockCount++;
+
                     if (rockCount >= 1000000000000L)
                         break;
+
+                    var topView = topView();
+                    var state = new State(topView, currentRockId, jetId);
+                    if (seen.containsKey(state)) {
+                        var old = seen.get(state);
+                        System.out.println(old);
+                        var repeat = (1000000000000L - rockCount) / (rockCount - old.rockCount());
+                        rockCount += (rockCount - old.rockCount()) * repeat;
+                        calculated += repeat * (findMaxY() -  old.height());
+                        seen.clear();
+                    }
+                    seen.put(state, new Value(findMaxY(), rockCount));
                 }
             }
             jetId = 0;
         }
-
-        long height = times * firstRepeat.height() + findMaxY();
-        System.out.println(height);
+        System.out.println(findMaxY() + 1 + calculated);
     }
 
     private static int[] topView() {
@@ -127,7 +124,7 @@ public class Day17 {
         //For each column walk down until we reach bottom or a brick
         //Store that value for that column
         for (int j = 0; j < 7; j++) {
-            for (int i = maxy; i >= maxy - 17; i--) {
+            for (int i = maxy; i >= maxy - 100; i--) {
                 if (i < 0)
                     break;
                 if (grid[j][i] == 1)
@@ -140,7 +137,7 @@ public class Day17 {
 
     private static int findMaxY() {
         int maxy = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < grid[0].length; i++) {
             for (int j = 0; j < 7; j++) {
                 if (grid[j][i] == 1) {
                     maxy = Math.max(maxy, i);
@@ -194,12 +191,12 @@ public class Day17 {
     }
 }
 
-final class Earlier {
+final class State {
     private final int[] topView;
     private final int rockId;
     private final int jetId;
 
-    Earlier(int[] topView, int rockId, int jetId) {
+    State(int[] topView, int rockId, int jetId) {
         this.topView = topView;
         this.rockId = rockId;
         this.jetId = jetId;
@@ -222,7 +219,7 @@ final class Earlier {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Earlier earlier = (Earlier) o;
+        State earlier = (State) o;
 
         if (rockId != earlier.rockId) return false;
         if (jetId != earlier.jetId) return false;
