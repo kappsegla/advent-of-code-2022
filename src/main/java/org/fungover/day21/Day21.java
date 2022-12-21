@@ -10,25 +10,25 @@ public class Day21 {
 
     public static void main(String[] args) {
 
-        String s = stringFromFile(resourceStringToPath("/day21/day21.txt"));
+        //   String s = stringFromFile(resourceStringToPath("/day21/day21.txt"));
 
-//        String s = """
-//                root: pppw + sjmn
-//                dbpl: 5
-//                cczh: sllz + lgvd
-//                zczc: 2
-//                ptdq: humn - dvpt
-//                dvpt: 3
-//                lfqf: 4
-//                humn: 5
-//                ljgn: 2
-//                sjmn: drzm * dbpl
-//                sllz: 4
-//                pppw: cczh / lfqf
-//                lgvd: ljgn * ptdq
-//                drzm: hmdt - zczc
-//                hmdt: 32
-//                """;
+        String s = """
+                root: pppw + sjmn
+                dbpl: 5
+                cczh: sllz + lgvd
+                zczc: 2
+                ptdq: humn - dvpt
+                dvpt: 3
+                lfqf: 4
+                humn: 5
+                ljgn: 2
+                sjmn: drzm * dbpl
+                sllz: 4
+                pppw: cczh / lfqf
+                lgvd: ljgn * ptdq
+                drzm: hmdt - zczc
+                hmdt: 32
+                """;
 
 
         var lines = s.lines().map(l -> l.split("[:\\s]")).toList();
@@ -42,21 +42,50 @@ public class Day21 {
                 yelling = new Formula(m[2], m[4], Calc.of(m[3]));
             orders.put(name, yelling);
         }
-
+        //Step1
         while (true) {
-
             for (var name : orders.keySet()) {
                 if (orders.get(name) instanceof Formula f && orders.get(f.name1) instanceof Num n1 && orders.get(f.name2) instanceof Num n2) {
+
                     orders.put(name, new Num(f.calc(n1, n2)));
                 }
-
             }
-
             if (orders.get("root") instanceof Num num) {
                 System.out.println(num.number);
                 break;
             }
         }
+        //Step2
+        lines = s.lines().map(l -> l.split("[:\\s]")).toList();
+        orders = new HashMap<>();
+        for (var m : lines) {
+            var name = m[0];
+            Yelling yelling;
+            if (m.length == 3)
+                yelling = new Num(Long.parseLong(m[2]));
+            else
+                yelling = new Formula(m[2], m[4], Calc.of(m[3]));
+            orders.put(name, yelling);
+        }
+        //Step1
+        while (true) {
+            for (var name : orders.keySet()) {
+                if( name.equals("root")){
+                    System.out.println("human");
+                }
+                else if( name.equals("humn")){
+                    System.out.println("human");
+                }
+                else if (orders.get(name) instanceof Formula f && orders.get(f.name1) instanceof Num n1 && orders.get(f.name2) instanceof Num n2) {
+                        orders.put(name, new Num(f.calc(n1, n2)));
+                }
+            }
+            if (orders.get("root") instanceof Num num) {
+                System.out.println(num.number);
+                break;
+            }
+        }
+
     }
 }
 
