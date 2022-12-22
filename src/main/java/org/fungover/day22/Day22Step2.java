@@ -128,6 +128,67 @@ public class Day22Step2 {
         }
     }
 
+    public static PointAndDir nextCubePos(PointAndDir curr,  Grid gridObj){
+        var nextDir = curr.dir;
+        var currDir = curr.dir;
+        var currSide = sideOf(curr);
+        var nextPos = new Point2D(curr.x, curr.y);
+        if (currSide == A && currDir == UP) {
+            nextDir = RIGHT;
+            nextPos = new Point2D(0, 3 * 50 + curr.x - 50); // nextSide = F
+        } else if (currSide == A && currDir == LEFT) {
+            nextDir = RIGHT;
+            nextPos = new Point2D(0, 2 * 50 + (50 - curr.y - 1)); // nextSide = E
+        } else if (currSide == B && currDir == UP) {
+            nextDir = UP;
+            nextPos = new Point2D(curr.x - 100, 199);// nextSide = F
+        } else if (currSide == B && currDir == RIGHT) {
+            nextDir = LEFT;
+            nextPos = new Point2D(99, (50 - curr.y) + 2 * 50 - 1); // nextSide = D
+        } else if (currSide == B && currDir == DOWN) {
+            nextDir = LEFT;
+            nextPos = new Point2D(99, 50 + (curr.x - 2 * 50)); // nextSide = C
+        } else if (currSide == C && currDir == RIGHT) {
+            nextDir = UP;
+            nextPos = new Point2D((curr.y - 50) + 2 * 50, 49); // nextSide = B
+        } else if (currSide == C && currDir == LEFT) {
+            nextDir = DOWN;
+            nextPos = new Point2D(curr.y - 50, 100); // nextSide = E
+        } else if (currSide == E && currDir == LEFT) {
+            nextDir = RIGHT;
+            nextPos = new Point2D(50, 50 - (curr.y - 2 * 50) - 1); // nextSide = A
+        } else if (currSide == E && currDir == UP) {
+            nextDir = RIGHT;
+            nextPos = new Point2D(50, 50 + curr.x); // nextSide = C
+        } else if (currSide == D && currDir == DOWN) {
+            nextDir = LEFT;
+            nextPos = new Point2D(49, 3 * 50 + (curr.x - 50)); // nextSide = F
+        } else if (currSide == D && currDir == RIGHT) {
+            nextDir = LEFT;
+            nextPos = new Point2D(149, 50 - (curr.y - 50 * 2) - 1); // nextSide = B
+        } else if (currSide == F && currDir == RIGHT) {
+            nextDir = UP;
+            nextPos = new Point2D((curr.y - 3 * 50) + 50, 149); // nextSide = D
+        } else if (currSide == F && currDir == LEFT) {
+            nextDir = DOWN;
+            nextPos = new Point2D(50 + (curr.y - 3 * 50), 0); // nextSide = A
+        } else if (currSide == F && currDir == DOWN) {
+            nextDir = DOWN;
+            nextPos = new Point2D(curr.x + 100, 0); // nextSide = B
+        }
+        return new PointAndDir(nextPos.x, nextPos.y, nextDir);
+    }
+
+    private static SIDE sideOf(PointAndDir pos) {
+            if (pos.x >= 50 && pos.x <= 99 && pos.y >= 0 && pos.y <= 49) return A;
+            if (pos.x >= 100 && pos.x <= 149 && pos.y >= 0 && pos.y <= 49) return B;
+            if (pos.x >= 50 && pos.x <= 99 && pos.y >= 50 && pos.y <= 99) return C;
+            if (pos.x >= 50 && pos.x <= 99 && pos.y >= 100 && pos.y <= 149) return D;
+            if (pos.x >= 0 && pos.x <= 49 && pos.y >= 100 && pos.y <= 149) return E;
+            if (pos.x >= 0 && pos.x <= 49 && pos.y >= 150 && pos.y <= 199) return F;
+        throw new IllegalStateException();
+    }
+
     enum SIDE {
         A, B, C, D, E, F
     }
