@@ -128,8 +128,6 @@ public class Day22Step2 {
         }
     }
 
-
-
     enum SIDE {
         A, B, C, D, E, F
     }
