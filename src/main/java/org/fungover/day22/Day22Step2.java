@@ -1,8 +1,6 @@
 package org.fungover.day22;
 
 import java.util.Arrays;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static org.fungover.day22.Day22Step2.DIR.*;
 import static org.fungover.day22.Day22Step2.SIDE.*;
@@ -65,7 +63,7 @@ public class Day22Step2 {
         var currentPos = new PointAndDir(posX, posY, RIGHT);
 
         //BiFunction<PointAndDir, Grid, PointAndDir> nextPos = Day22Step2::nextPos;
-        BiFunction<PointAndDir, Grid, PointAndDir> nextPos = Day22Step2::nextCubePos;
+        //BiFunction<PointAndDir, Grid, PointAndDir> nextPos = Day22Step2::nextCubePos;
 
         //Parse instructions
         var instructions = Arrays.stream(path.split("((?=\\D))|((?<=\\D))")).map(Day22Step2::toCommand).toList();
@@ -78,8 +76,7 @@ public class Day22Step2 {
                     if (sideOf(new PointAndDir(currentPos.x + currentPos.dir.point2D.x, currentPos.y + currentPos.dir.point2D.y, currentPos.dir)) != OUTSIDE)
                         next = new PointAndDir(currentPos.x + currentPos.dir.point2D.x, currentPos.y + currentPos.dir.point2D.y, currentPos.dir);
                     else //Wrap around
-                        next = nextPos.apply(currentPos, gridObj);
-                    //var next = nextPos.apply(currentPos, gridObj);
+                        next = nextCubePos(currentPos);
                     if (isWall(next, grid)) break;
                     currentPos = next;
                 }
@@ -127,53 +124,53 @@ public class Day22Step2 {
         }
     }
 
-    public static PointAndDir nextCubePos(PointAndDir curr, Grid gridObj) {
+    public static PointAndDir nextCubePos(PointAndDir curr) {
         var nextDir = curr.dir;
         var currDir = curr.dir;
         var currSide = sideOf(curr);
         var nextPos = new Point2D(curr.x, curr.y);
         if (currSide == A && currDir == UP) {
             nextDir = RIGHT;
-            nextPos = new Point2D(150 + curr.y - 50, 0); // nextSide = F !
+            nextPos = new Point2D(150 + curr.y - 50, 0); // F
         } else if (currSide == A && currDir == LEFT) {
             nextDir = RIGHT;
-            nextPos = new Point2D(100 + (50 - curr.x - 1), 0); // nextSide = E !
+            nextPos = new Point2D(100 + (50 - curr.x - 1), 0); // E
         } else if (currSide == B && currDir == UP) {
             nextDir = UP;
-            nextPos = new Point2D(199, curr.y - 100);// nextSide = F
+            nextPos = new Point2D(199, curr.y - 100);// F
         } else if (currSide == B && currDir == RIGHT) {
             nextDir = LEFT;
-            nextPos = new Point2D((50 - curr.x) + 2 * 50 - 1, 99); // nextSide = D  ??
+            nextPos = new Point2D((50 - curr.x) + 2 * 50 - 1, 99); // D
         } else if (currSide == B && currDir == DOWN) {
             nextDir = LEFT;
-            nextPos = new Point2D(50 + (curr.y - 2 * 50), 99); // nextSide = C !
+            nextPos = new Point2D(50 + (curr.y - 2 * 50), 99); // C
         } else if (currSide == C && currDir == RIGHT) {
             nextDir = UP;
-            nextPos = new Point2D(49, (curr.x - 50) + 2 * 50); // nextSide = B !
+            nextPos = new Point2D(49, (curr.x - 50) + 2 * 50); // B
         } else if (currSide == C && currDir == LEFT) {
             nextDir = DOWN;
-            nextPos = new Point2D(100, curr.x - 50); // nextSide = E !
+            nextPos = new Point2D(100, curr.x - 50); // E
         } else if (currSide == E && currDir == LEFT) {
             nextDir = RIGHT;
-            nextPos = new Point2D(curr.x - 2 * 50, 50); // nextSide = A !!
+            nextPos = new Point2D( (50 - (curr.x - 2 * 50) - 1), 50); // A
         } else if (currSide == E && currDir == UP) {
             nextDir = RIGHT;
-            nextPos = new Point2D(50 + curr.y, 50); // nextSide = C !
+            nextPos = new Point2D(50 + curr.y, 50); // C
         } else if (currSide == D && currDir == DOWN) {
             nextDir = LEFT;
-            nextPos = new Point2D(3 * 50 + (curr.y - 50), 49); // nextSide = F !
+            nextPos = new Point2D(3 * 50 + (curr.y - 50), 49); // F
         } else if (currSide == D && currDir == RIGHT) {
             nextDir = LEFT;
-            nextPos = new Point2D(50 - (curr.x - 50 * 2) - 1, 149); // nextSide = B !??
+            nextPos = new Point2D(50 - (curr.x - 50 * 2) - 1, 149); // B
         } else if (currSide == F && currDir == RIGHT) {
             nextDir = UP;
-            nextPos = new Point2D(149, (curr.x - 3 * 50) + 50); // nextSide = D !
+            nextPos = new Point2D(149, (curr.x - 3 * 50) + 50); // D
         } else if (currSide == F && currDir == LEFT) {
             nextDir = DOWN;
-            nextPos = new Point2D(0, 50 + (curr.x - 3 * 50)); // nextSide = A !
+            nextPos = new Point2D(0, 50 + (curr.x - 3 * 50)); // A
         } else if (currSide == F && currDir == DOWN) {
             nextDir = DOWN;
-            nextPos = new Point2D(0, curr.y + 100); // nextSide = B !
+            nextPos = new Point2D(0, curr.y + 100); // B
         }
         return new PointAndDir(nextPos.x, nextPos.y, nextDir);
     }
@@ -249,10 +246,10 @@ public class Day22Step2 {
 
     }
 
-    private record Point2D(int x, int y) {
+    public record Point2D(int x, int y) {
     }
 
-    private record PointAndDir(int x, int y, DIR dir) {
+    public record PointAndDir(int x, int y, DIR dir) {
     }
 }
 
