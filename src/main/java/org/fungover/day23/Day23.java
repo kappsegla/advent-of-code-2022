@@ -46,8 +46,8 @@ public class Day23 {
 
         List<Pos> whichList = new ArrayList<>();
         //Run for 10 rounds
-        for (int i = 0; i < 10; i++) {
-            printElfs(elfs);
+        for (int i = 0; ; i++) {
+           // printElfs(elfs);
             whichList.clear();
             for (var elf : elfs) {
                 //Check if elf wants to move
@@ -55,6 +55,11 @@ public class Day23 {
                 if (p != null)
                     whichList.add(p);
             }
+            if( whichList.isEmpty()) {
+                System.out.println(i);
+                break;
+            }
+
             //Check movements that can be done. Only one elf wants to move there
             var canMove = whichList.stream().collect(Collectors.groupingBy(Function.identity(),
                             Collectors.counting()))
@@ -70,7 +75,6 @@ public class Day23 {
             //Rotate firstMoveDirection
             elfs.forEach(Elf::rotate);
         }
-
 
         //Find min, max values to calculate surrounding box.
         var minx = elfs.stream().mapToInt(Elf::getX).min().getAsInt();
