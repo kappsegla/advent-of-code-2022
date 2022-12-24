@@ -1,179 +1,201 @@
 package org.fungover.day19;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.stream.IntStream;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import static org.fungover.day19.Day19.ROBOT.*;
 import static org.fungover.util.FileReader.resourceStringToPath;
 import static org.fungover.util.FileReader.stringFromFile;
 
 public class Day19 {
+
     public static void main(String[] args) {
         String s = stringFromFile(resourceStringToPath("/day19/day19.txt"));
-//        String s = """
-//                Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
-//                Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.
-//                """;
+        var bluePrints = s.lines().map(BluePrint::of).toList();
 
-        var bluePrints = s.lines().map(l -> l.split("[\\s:]")).map(BluePrint::of).toList();
+        //Step1
+//        System.out.println(measurePerf(Day19::executeWithStream,bluePrints));
+//        System.out.println(measurePerf(Day19::executeWithParallelStream,bluePrints));
+        System.out.println("Step1: " + bluePrints.parallelStream().mapToInt(Day19::getQualityLevel).sum());
 
-   //     System.out.println(bluePrints.stream().mapToInt(m -> m.id * calculateGeodesFound(m, 24)).sum());
+        //Step2
+        System.out.println("Step2: " + bluePrints.parallelStream().limit(3).mapToInt(b -> getMaxGeodes(b, 32)).reduce(1, (a, b) -> a * b));
+    }
 
-//        System.out.println(calculateGeodesFound(bluePrints.get(0), 32));
-//        System.out.println(calculateGeodesFound(bluePrints.get(1), 32));
-        System.out.println(calculateGeodesFound(bluePrints.get(2), 32));
+    static void executeWithStream(List<BluePrint> bluePrints) {
+        System.out.println("Step1: " + bluePrints.stream().mapToInt(Day19::getQualityLevel).sum());
+    }
 
-//        int sum = bluePrints.stream().limit(3).mapToInt(m->calculateGeodesFound(m, 32)).reduce(1, (a,b)-> a*b);
-//        System.out.println(sum);
+    static void executeWithParallelStream(List<BluePrint> bluePrints) {
+        System.out.println("Step1: " + bluePrints.parallelStream().mapToInt(Day19::getQualityLevel).sum());
     }
 
 
-    private static int calculateGeodesFound(BluePrint bluePrint, int maxTime) {
-        var maxGeodes = 0;
-        var queue = new PriorityQueue<State>();
-        queue.add(new State(bluePrint));
+    private static int getQualityLevel(final BluePrint b) {
+        return getMaxGeodes(b, 24) * b.id();
+    }
 
-        while (!queue.isEmpty()) {
-            var state = queue.poll();
-            if (state.canOutproduceBest(maxGeodes, maxTime)) {
-                queue.addAll(state.nextStates(maxTime));
-            }
-            maxGeodes = Math.max(maxGeodes, state.geodes);
+    private static int getMaxGeodes(BluePrint b, int minutes) {
+        Map<State, Integer> cache = new ConcurrentHashMap<>();
+        int result = 0;
+        result = getMaxGeodesForType(cache, b, minutes - 1, ORE, 1, 0, 0, 0, 1, 0, 0, 0);
+        result = Math.max(result, getMaxGeodesForType(cache, b, minutes - 1, CLAY, 1, 0, 0, 0, 1, 0, 0, 0));
+        result = Math.max(result, getMaxGeodesForType(cache, b, minutes - 1, OB, 1, 0, 0, 0, 1, 0, 0, 0));
+        result = Math.max(result, getMaxGeodesForType(cache, b, minutes - 1, GEO, 1, 0, 0, 0, 1, 0, 0, 0));
+//        try(ExecutorService pool = Executors.newFixedThreadPool(3)){
+//            var task1 = pool.submit(()->getMaxGeodesForType(cache, b, minutes - 1, ORE, 1, 0, 0, 0, 1, 0, 0, 0));
+//            var task2 = pool.submit(()->getMaxGeodesForType(cache, b, minutes - 1, CLAY, 1, 0, 0, 0, 1, 0, 0, 0));
+//            var task3 = pool.submit(()->getMaxGeodesForType(cache, b, minutes - 1, OB, 1, 0, 0, 0, 1, 0, 0, 0));
+//            result = getMaxGeodesForType(cache, b, minutes - 1, GEO, 1, 0, 0, 0, 1, 0, 0, 0);
+//
+//            result = Math.max(result, task1.get());
+//            result = Math.max(result, task2.get());
+//            result = Math.max(result, task3.get());
+//        } catch (ExecutionException | InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+        return result;
+    }
+
+    private static int getMaxGeodesForType(Map<State, Integer> cache, BluePrint b, int minutesLeft, final ROBOT goal, int nrOre, int nrClay, int nrOb,
+                                           int nrGeo,
+                                           final int nrOreRobots, final int nrClayRobots, final int nrObRobots, final int nrGeoRobots) {
+        if (minutesLeft == 0) {
+            return nrGeo;
         }
-        return maxGeodes;
-    }
-}
 
-class State implements Comparable<State> {
-    int oreRobots = 1;
-    int clayRobots = 0;
-    int obsidianRobots = 0;
-    int geodeRobots = 0;
-
-    int time = 1;
-    int ore = 1;
-    int clay = 0;
-    int obsidian = 0;
-    int geodes = 0;
-
-    BluePrint bluePrint;
-
-    public State(BluePrint bluePrint) {
-        this.bluePrint = bluePrint;
-    }
-
-    public List<? extends State> nextStates(int maxTime) {
-        List<State> nextStates = new ArrayList<>();
-        if (time < maxTime) {
-            if (bluePrint.maxOre > oreRobots && ore > 0) {
-                nextStates.add(bluePrint.oreRobot.scheduleBuild(this));
-            }
-            if (bluePrint.maxClay > clayRobots && ore > 0) {
-                nextStates.add(bluePrint.clayRobot.scheduleBuild(this));
-            }
-            if (bluePrint.maxObsidian > obsidianRobots && ore > 0 && clay > 0) {
-                nextStates.add(bluePrint.obsidianRobot.scheduleBuild(this));
-            }
-            if (ore > 0 && obsidian > 0) {
-                nextStates.add(bluePrint.geodeRobot.scheduleBuild(this));
-            }
+        // Stop building a robot if we have more of the resource it builds than we need.
+        final int maxOre = Math.max(b.oreCost(), Math.max(b.clayOreCost(), Math.max(b.obOreCost(), b.geoObCost())));
+        if (goal == ORE && nrOre >= maxOre || goal == CLAY && nrClay >= b.obClayCost()
+                || goal == OB && (nrOb >= b.geoObCost() || nrClay == 0) || goal == GEO && nrOb == 0) {
+            return 0;
         }
-        return nextStates.stream().filter(s -> s.time <= maxTime).toList();
-    }
 
-    public boolean canOutproduceBest(int bestSoFar, int timeBudget){
-        var timeLeft = timeBudget - time;
-        var potentialProduction = IntStream.range(0,timeLeft).map(i-> i  + geodeRobots).sum();
-        return geodes + potentialProduction > bestSoFar;
-    }
+        final State state = new State(nrOre, nrClay, nrOb, nrGeo, nrOreRobots, nrClayRobots, nrObRobots, nrGeoRobots, minutesLeft, goal);
 
-    @Override
-    public int compareTo(State other) {
-        return Integer.compare(geodes, other.geodes);
-    }
-}
-
-
-class RobotBluePrint {
-    public RobotBluePrint(int oreCost, int clayCost, int obsidianCost, int oreRobotsBuilt, int clayRobotsBuilt, int obsidianRobotsBuilt, int geodeRobotsBuilt) {
-        this.oreCost = oreCost;
-        this.clayCost = clayCost;
-        this.obsidianCost = obsidianCost;
-        this.oreRobotsBuilt = oreRobotsBuilt;
-        this.clayRobotsBuilt = clayRobotsBuilt;
-        this.obsidianRobotsBuilt = obsidianRobotsBuilt;
-        this.geodeRobotsBuilt = geodeRobotsBuilt;
-    }
-
-    int oreCost;
-    int clayCost;
-    int obsidianCost;
-
-    int oreRobotsBuilt;
-    int clayRobotsBuilt;
-    int obsidianRobotsBuilt;
-    int geodeRobotsBuilt;
-
-    public State scheduleBuild(State state) {
-        var timeRequired = timeUntilBuild(state);
-
-        var nextState = new State(state.bluePrint);
-
-        nextState.time = state.time + timeRequired;
-        nextState.ore = (state.ore - oreCost) + (timeRequired * state.oreRobots);
-        nextState.oreRobots = state.oreRobots + oreRobotsBuilt;
-        nextState.clay = (state.clay - clayCost) + (timeRequired * state.clayRobots);
-        nextState.clayRobots = state.clayRobots + clayRobotsBuilt;
-        nextState.obsidian = (state.obsidian - obsidianCost) + (timeRequired * state.obsidianRobots);
-        nextState.obsidianRobots = state.obsidianRobots + obsidianRobotsBuilt;
-        nextState.geodes = state.geodes + (timeRequired * state.geodeRobots);
-        nextState.geodeRobots = state.geodeRobots + geodeRobotsBuilt;
-
-        return nextState;
-    }
-
-    private int timeUntilBuild(State state) {
-        return BluePrint.maxOf((oreCost <= state.ore) ? 0 : (int) Math.ceil((oreCost - state.ore) / (state.oreRobots * 1.0)),
-                (clayCost <= state.clay) ? 0 : (int) Math.ceil((clayCost - state.clay) / (state.clayRobots * 1.0)),
-                (obsidianCost <= state.obsidian) ? 0 : (int) Math.ceil((obsidianCost - state.obsidian) / (state.obsidianRobots * 1.0))) + 1;
-    }
-}
-
-class BluePrint {
-    int id;
-    RobotBluePrint oreRobot;
-    RobotBluePrint clayRobot;
-    RobotBluePrint obsidianRobot;
-    RobotBluePrint geodeRobot;
-
-    int maxOre;
-    int maxClay;
-    int maxObsidian;
-
-    public static BluePrint of(String[] input) {
-        var bp = new BluePrint();
-        bp.id = Integer.parseInt(input[1]);
-        bp.oreRobot = new RobotBluePrint(Integer.parseInt(input[7]), 0, 0,1,0,0,0);
-        bp.clayRobot = new RobotBluePrint(Integer.parseInt(input[13]), 0, 0,0,1,0,0);
-        bp.obsidianRobot = new RobotBluePrint(Integer.parseInt(input[19]), Integer.parseInt(input[22]), 0,0,0,1,0);
-        bp.geodeRobot = new RobotBluePrint(Integer.parseInt(input[28]), 0, Integer.parseInt(input[31]),0,0,0,1);
-
-        bp.maxOre = maxOf(bp.oreRobot.oreCost, bp.clayRobot.oreCost, bp.obsidianRobot.oreCost, bp.geodeRobot.oreCost);
-
-        bp.maxClay = maxOf(bp.oreRobot.clayCost, bp.clayRobot.clayCost, bp.obsidianRobot.clayCost, bp.geodeRobot.clayCost);
-
-        bp.maxObsidian = maxOf(bp.oreRobot.obsidianCost, bp.clayRobot.obsidianCost, bp.obsidianRobot.obsidianCost, bp.geodeRobot.obsidianCost);
-
-        return bp;
-    }
-
-    public static int maxOf(int first, int... rest) {
-        int ret = first;
-        for (int val : rest) {
-            ret = Math.max(ret, val);
+        if (cache.containsKey(state)) {
+            return cache.get(state);
         }
-        return ret;
+        int max = 0;
+
+        while (minutesLeft > 0) {
+            if (canBuildOreRobot(b, goal, nrOre)) { // Build ore robot
+                int tmpMax = 0;
+                for (int newGoal = 0; newGoal < 4; newGoal++) {
+                    tmpMax = Math.max(tmpMax,
+                            getMaxGeodesForType(cache, b, minutesLeft - 1, ROBOT.values()[newGoal], nrOre - b.oreCost() + nrOreRobots,
+                                    nrClay + nrClayRobots, nrOb + nrObRobots, nrGeo + nrGeoRobots, nrOreRobots+1,
+                                    nrClayRobots, nrObRobots, nrGeoRobots));
+                }
+                max = Math.max(max, tmpMax);
+                cache.put(state, max);
+                return max;
+            } else if (canBuildClayRobot(b, goal, nrOre)) { // Build clay robot
+                int tmpMax = 0;
+                for (int newGoal = 0; newGoal < 4; newGoal++) {
+                    tmpMax = Math.max(tmpMax,
+                            getMaxGeodesForType(cache, b, minutesLeft - 1, ROBOT.values()[newGoal], nrOre - b.clayOreCost() + nrOreRobots,
+                                    nrClay + nrClayRobots, nrOb + nrObRobots, nrGeo + nrGeoRobots, nrOreRobots,
+                                    nrClayRobots + 1, nrObRobots, nrGeoRobots));
+                }
+                max = Math.max(max, tmpMax);
+                cache.put(state, max);
+                return max;
+            } else if (canBuildObRobot(b, goal, nrOre, nrClay)) { // Build ob robot
+                int tmpMax = 0;
+                for (int newGoal = 0; newGoal < 4; newGoal++) {
+                    tmpMax = Math.max(tmpMax,
+                            getMaxGeodesForType(cache, b, minutesLeft - 1, ROBOT.values()[newGoal], nrOre - b.obOreCost() + nrOreRobots,
+                                    nrClay - b.obClayCost() + nrClayRobots, nrOb + nrObRobots, nrGeo + nrGeoRobots,
+                                    nrOreRobots, nrClayRobots, nrObRobots + 1, nrGeoRobots));
+                }
+                max = Math.max(max, tmpMax);
+                cache.put(state, max);
+                return max;
+            } else if (canBuildGeoRobot(b, goal, nrOre, nrOb)) { // Build geo robot
+                int tmpMax = 0;
+                for (int newGoal = 0; newGoal < 4; newGoal++) {
+                    tmpMax = Math.max(tmpMax,
+                            getMaxGeodesForType(cache, b, minutesLeft - 1, ROBOT.values()[newGoal], nrOre - b.geoOreCost() + nrOreRobots,
+                                    nrClay + nrClayRobots, nrOb - b.geoObCost() + nrObRobots, nrGeo + nrGeoRobots,
+                                    nrOreRobots, nrClayRobots, nrObRobots, nrGeoRobots + 1));
+                }
+                max = Math.max(max, tmpMax);
+                cache.put(state, max);
+                return max;
+            }
+            // Can not build a robot, so continue gathering resources.
+            minutesLeft--;
+            nrOre += nrOreRobots;
+            nrClay += nrClayRobots;
+            nrOb += nrObRobots;
+            nrGeo += nrGeoRobots;
+            max = Math.max(max, nrGeo);
+        }
+        cache.put(state, max);
+        return max;
     }
 
+    private static boolean canBuildGeoRobot(BluePrint b, ROBOT goal, int nrOre, int nrOb) {
+        return goal == GEO && nrOre >= b.geoOreCost() && nrOb >= b.geoObCost();
+    }
+
+    private static boolean canBuildObRobot(BluePrint b, ROBOT goal, int nrOre, int nrClay) {
+        return goal == OB && nrOre >= b.obOreCost() && nrClay >= b.obClayCost();
+    }
+
+    private static boolean canBuildClayRobot(BluePrint b, ROBOT goal, int nrOre) {
+        return goal == CLAY && nrOre >= b.clayOreCost();
+    }
+
+    private static boolean canBuildOreRobot(BluePrint b, ROBOT goal, int nrOre) {
+        return goal == ORE && nrOre >= b.oreCost();
+    }
+
+    /*
+     * Applies the function parameter func, passing n as parameter.
+     * Returns the average time (ms.) to execute the function 100 times.
+     */
+
+    public static <T> double measurePerf(Consumer<T> consumer, T value) {
+        int numOfExecutions = 10;
+        double totTime = 0.0;
+        for (int i = 0; i < numOfExecutions; i++) {
+            double start = System.nanoTime();
+            consumer.accept(value);
+            double duration = (System.nanoTime() - start) / 1_000_000;
+            totTime += duration;
+        }
+        return totTime / numOfExecutions;
+    }
+
+
+    private record BluePrint(int id, int oreCost, int clayOreCost, int obOreCost, int obClayCost, int geoOreCost,
+                             int geoObCost) {
+
+        public static BluePrint of(String line) {
+            final Pattern p = Pattern.compile(
+                    "Blueprint (\\d+): Each ore robot costs (\\d+) ore. Each clay robot costs (\\d+) ore. Each obsidian robot costs (\\d+) ore and (\\d+) clay. Each geode robot costs (\\d+) ore and (\\d+) obsidian.");
+            final Matcher m = p.matcher(line);
+            if (m.find()) {
+                return new BluePrint(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
+                        Integer.parseInt(m.group(3)), Integer.parseInt(m.group(4)), Integer.parseInt(m.group(5)),
+                        Integer.parseInt(m.group(6)), Integer.parseInt(m.group(7)));
+            }
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private record State(int nrOre, int nrClay, int nrOb, int nrGeo, int nrOreRobot, int nrClayRobot, int nrObRobot,
+                         int nrGeoRobot, int minutesLeft, ROBOT goal) {
+    }
+
+    enum ROBOT {
+        ORE, CLAY, OB, GEO
+    }
 }
+
